@@ -52,6 +52,7 @@ class Lexer {
         char c = advance();
 
         switch (c) {
+            // single-character tokens
             case '(' -> addToken(LEFT_PAREN);
             case ')' -> addToken(RIGHT_PAREN);
             case '{' -> addToken(LEFT_BRACE);
@@ -62,10 +63,14 @@ class Lexer {
             case '+' -> addToken(PLUS);
             case ';' -> addToken(SEMICOLON);
             case '*' -> addToken(STAR);
+
+            // one- or two-character tokens
             case '!' -> addToken(match('=') ? BANG_EQUAL : BANG);
             case '=' -> addToken(match('=') ? EQUAL_EQUAL : EQUAL);
             case '<' -> addToken(match('=') ? LESS_EQUAL : LESS);
             case '>' -> addToken(match('=') ? GREATER_EQUAL : GREATER);
+
+            // slash or comment
             case '/' -> {
                 if (match('/')) {
                     // A comment goes until the end of the line.
@@ -76,16 +81,22 @@ class Lexer {
                     addToken(SLASH);
                 }
             }
+
+            // whitespace and newline
             case ' ', '\r', '\t' -> {
                 // Ignore whitespace.
             }
             case '\n' -> line++;
+
+            // strings
             case '"' -> string();
+
+            // numbers, keywords, identifiers, unexpected
             default  -> {
                 if (isDigit(c)) {
                     number();
                 } else if (isAlpha(c)) {
-                    identifier();
+                    keywordOrIdentifier();
                 } else {
                     Lox04.error(line, "Unexpected character.");
                 }
@@ -133,7 +144,7 @@ class Lexer {
         addToken(NUMBER, Double.parseDouble(source.substring(start, current)));
     }
 
-    private void identifier() {
+    private void keywordOrIdentifier() {
         while (isAlphaNumeric(peek())) {
             advance();
         }
@@ -143,14 +154,24 @@ class Lexer {
         addToken(type);
     }
 
+    /**
+     * Determines whether we have reached the end of the source.
+     */
     private boolean isAtEnd() {
         return current >= source.length();
     }
 
+    /**
+     * Returns the current character and advances to the next character.
+     */
     private char advance() {
         return source.charAt(current++);
     }
 
+    /**
+     * Returns the current character without advancing to the next one.
+     * Returns '\0' if we have reached the end of the source.
+     */
     private char peek() {
         if (isAtEnd()) {
             return '\0';
@@ -159,6 +180,10 @@ class Lexer {
         }
     }
 
+    /**
+     * Returns the next character without advancing.
+     * Returns '\0' if there is no next character.
+     */
     private char peekNext() {
         if (current + 1 >= source.length()) {
             return '\0';
@@ -167,6 +192,10 @@ class Lexer {
         }
     }
 
+    /**
+     * Advances and returns true if the current character equals the expected character.
+     * Otherwise, returns false and does not advance.
+     */
     private boolean match(char expected) {
         if (isAtEnd()) {
             return false;
@@ -178,22 +207,38 @@ class Lexer {
         }
     }
 
+    /**
+     * Determines whether the specified character is a digit.
+     */
     private boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
 
+    /**
+     * Determines whether the specified character is a letter or _.
+     */
     private boolean isAlpha(char c) {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
     }
 
+    /**
+     * Determines whether the specified character is a digit, letter, or _.
+     */
     private boolean isAlphaNumeric(char c) {
         return isAlpha(c) || isDigit(c);
     }
 
+    /**
+     * Adds a token to the list without a meaningful value.
+     */
     private void addToken(TokenType type) {
         addToken(type, null);
     }
 
+    /**
+     * Adds a token to the list for the current lexeme, which
+     * is from index start until (but not including) index current.
+     */
     private void addToken(TokenType type, Object literal) {
         String text = source.substring(start, current);
         tokens.add(new Token(type, text, literal, line));
