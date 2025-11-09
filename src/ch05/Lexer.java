@@ -1,10 +1,12 @@
-package ch04;
+package ch05;
+
+// no changes from previous chapter
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static ch04.TokenType.*;
+import static ch05.TokenType.*;
 import static java.util.Map.entry;
 
 class Lexer {

@@ -1,4 +1,4 @@
-package ch04;
+package ch06;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -6,12 +6,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class Lox04 {
+public class Lox {
     static boolean hadError = false;
 
     static void main(String[] args) throws IOException {
         if (args.length > 1) {
-            IO.println("Usage: java Lox04.java [script]");
+            IO.println("Usage: java Lox.java [script]");
             System.exit(1);
         } else if (args.length == 1) {
             runFile(args[0]);
@@ -46,14 +46,29 @@ public class Lox04 {
         Lexer lexer = new Lexer(source);
         List<Token> tokens = lexer.scanTokens();
 
-        // For now, just print the tokens.
-        for (Token token : tokens) {
-            IO.println(token);
+        Parser parser = new Parser(tokens);
+        Expr expression = parser.parse();
+
+        // Stop if there was a syntax error.
+        if (hadError) {
+            return;
         }
+
+        // For now, just print the AST.
+        AstStringifier astStringifier = new AstStringifier();
+        IO.println(astStringifier.stringify(expression));
     }
 
     static void error(int line, String message) {
         report(line, "", message);
+    }
+
+    static void error(Token token, String message) {
+        if (token.type() == TokenType.EOF) {
+            report(token.line(), " at end", message);
+        } else {
+            report(token.line(), " at '" + token.lexeme() + "'", message);
+        }
     }
 
     private static void report(int line, String where, String message) {
