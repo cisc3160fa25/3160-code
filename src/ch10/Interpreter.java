@@ -134,10 +134,14 @@ class Interpreter {
     private Object visitLogicalExpr(Logical logical) {
         Object left = evaluate(logical.left());
 
-        if (logical.operator().type() == TokenType.OR && isTruthy(left)) {
-            return left;
-        } else if (!isTruthy(left)) {
-            return left;
+        if (logical.operator().type() == ch10.TokenType.OR) {
+            if (isTruthy(left)) {
+                return left;
+            }
+        } else {
+            if (!isTruthy(left)) {
+                return left;
+            }
         }
 
         return evaluate(logical.right());
