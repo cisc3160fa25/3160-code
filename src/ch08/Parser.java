@@ -199,7 +199,7 @@ class Parser {
     }
 
     // primary        → NUMBER | STRING | "true" | "false" | "nil"
-    //                | "(" expression ")" ;
+    //                | "(" expression ")" | IDENTIFIER ;
     private Expr primary() {
         if (match(FALSE)) {
             return new Literal(false);

@@ -1,5 +1,7 @@
 package ch09;
 
+// no changes from previous chapter
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static ch08.TokenType.*;
+import static ch09.TokenType.*;
 import static java.util.Map.entry;
 
 class Lexer {

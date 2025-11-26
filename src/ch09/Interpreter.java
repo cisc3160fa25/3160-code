@@ -23,6 +23,7 @@ class Interpreter {
             case Var varStmt -> visitVarStmt(varStmt);
             case Block blockStmt -> visitBlockStmt(blockStmt);
             case If ifStmt -> visitIfStmt(ifStmt);
+            case While whileStmt -> visitWhileStmt(whileStmt);
         }
     }
 
@@ -31,6 +32,12 @@ class Interpreter {
             execute(ifStmt.thenBranch());
         } else if (ifStmt.elseBranch() != null) {
             execute(ifStmt.elseBranch());
+        }
+    }
+
+    private void visitWhileStmt(While whileStmt) {
+        while (isTruthy(evaluate(whileStmt.condition()))) {
+            execute(whileStmt.body());
         }
     }
 
