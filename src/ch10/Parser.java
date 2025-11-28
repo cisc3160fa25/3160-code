@@ -7,9 +7,12 @@ import static ch10.TokenType.*;
 
 /*
 program        → declaration* EOF ;
-declaration    → varDecl | statement ;
+declaration    → funDecl | varDecl | statement ;
+funDecl        → "fun" function ;
+function       → IDENTIFIER "(" parameters? ")" block ;
+parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
 varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
-statement      → exprStmt | printStmt | block | ifStmt | whileStmt | forStmt ;
+statement      → exprStmt | printStmt | block | ifStmt | whileStmt | forStmt | returnStmt ;
 exprStmt       → expression ";" ;
 printStmt      → "print" expression ";" ;
 block          → "{" declaration* "}" ;
@@ -20,6 +23,7 @@ forStmt        → "for" "("
                  expression? ";"
                  expression? ")"
                  statement ;
+returnStmt     → "return" expression? ";" ;
 
 expression     → assignment ;
 assignment     → IDENTIFIER "=" assignment
@@ -61,10 +65,13 @@ class Parser {
         return statements;
     }
 
-    // declaration    → varDecl | statement ;
+    // declaration    → funDecl | varDecl | statement ;
+    // funDecl        → "fun" function ;
     private Stmt declaration() {
         try {
-            if (match(VAR)) {
+            if (match(FUN)) {
+                return function("function");
+            } else if (match(VAR)) {
                 return varDeclaration();
             } else {
                 return statement();
@@ -75,6 +82,30 @@ class Parser {
         }
     }
 
+    // function       → IDENTIFIER "(" parameters? ")" block ;
+    // parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
+    private Function function(String kind) {
+        Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
+        consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
+        List<Token> parameters = new ArrayList<>();
+
+        if (!check(RIGHT_PAREN)) {
+            do {
+                // done in book, but not necessary:
+                // if (parameters.size() >= 255) {
+                //     error(peek(), "Can't have more than 255 parameters.");
+                // }
+
+                parameters.add(consume(IDENTIFIER, "Expect parameter name."));
+            } while (match(COMMA));
+        }
+
+        consume(RIGHT_PAREN, "Expect ')' after parameters.");
+        consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+        List<Stmt> body = block();
+        return new Function(name, parameters, body);
+    }
+
     // varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
     private Stmt varDeclaration() {
         Token name = consume(IDENTIFIER, "Expect variable name.");
@@ -83,7 +114,7 @@ class Parser {
         return new Var(name, initializer);
     }
 
-    // statement      → exprStmt | printStmt | block | ifStmt | whileStmt | forStmt ;
+    // statement      → exprStmt | printStmt | block | ifStmt | whileStmt | forStmt | returnStmt ;
     private Stmt statement() {
         if (match(IF)) {
             return ifStatement();
@@ -95,9 +126,19 @@ class Parser {
             return printStatement();
         } else if (match(LEFT_BRACE)) {
             return new Block(block());
+        } else if (match(RETURN)) {
+            return returnStatement();
         } else {
             return expressionStatement();
         }
+    }
+
+    // returnStmt     → "return" expression? ";" ;
+    private Stmt returnStatement() {
+        Token keyword = previous();
+        Expr value = check(SEMICOLON) ? null : expression();
+        consume(SEMICOLON, "Expect ';' after return value.");
+        return new ReturnStmt(keyword, value);
     }
 
     // ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
@@ -337,7 +378,6 @@ class Parser {
         Token paren = consume(RIGHT_PAREN, "Expect ')' after arguments.");
         return new Call(callee, paren, arguments);
     }
-
 
     // primary        → NUMBER | STRING | "true" | "false" | "nil"
     //                | "(" expression ")" | IDENTIFIER ;

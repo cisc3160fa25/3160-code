@@ -15,3 +15,7 @@ record Block(List<Stmt> statements) implements Stmt {}
 record If(Expr condition, Stmt thenBranch, Stmt elseBranch) implements Stmt {}
 
 record While(Expr condition, Stmt body) implements Stmt {}
+
+record Function(Token name, List<Token> params, List<Stmt> body) implements Stmt {}
+
+record ReturnStmt(Token keyword, Expr value) implements Stmt {}

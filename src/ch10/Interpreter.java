@@ -47,7 +47,19 @@ class Interpreter {
             case Block blockStmt -> visitBlockStmt(blockStmt);
             case If ifStmt -> visitIfStmt(ifStmt);
             case While whileStmt -> visitWhileStmt(whileStmt);
+            case Function functionStmt -> visitFunctionStmt(functionStmt);
+            case ReturnStmt returnStmt -> visitReturnStmt(returnStmt);
         }
+    }
+
+    private void visitFunctionStmt(Function functionStmt) {
+        LoxFunction loxFunction = new LoxFunction(functionStmt);
+        currentEnvironment.define(functionStmt.name().lexeme(), loxFunction);
+    }
+
+    private void visitReturnStmt(ReturnStmt returnStmt) {
+        Object returnValue = returnStmt.value() == null ? null : evaluate(returnStmt.value());
+        throw new Return(returnValue);
     }
 
     private void visitIfStmt(If ifStmt) {
@@ -118,17 +130,17 @@ class Interpreter {
             arguments.add(evaluate(argument));
         }
 
-        if (!(callee instanceof LoxCallable function)) {
+        if (!(callee instanceof LoxCallable callable)) {
             throw new RuntimeError(call.paren(), "Can only call functions and classes.");
         }
 
-        if (arguments.size() != function.arity()) {
+        if (arguments.size() != callable.arity()) {
             throw new RuntimeError(call.paren(), "Expected " +
-                    function.arity() + " arguments but got " +
+                    callable.arity() + " arguments but got " +
                     arguments.size() + ".");
         }
 
-        return function.call(this, arguments);
+        return callable.call(this, arguments);
     }
 
     private Object visitLogicalExpr(Logical logical) {
