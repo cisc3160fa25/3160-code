@@ -53,7 +53,7 @@ class Interpreter {
     }
 
     private void visitFunctionStmt(Function functionStmt) {
-        LoxFunction loxFunction = new LoxFunction(functionStmt);
+        LoxFunction loxFunction = new LoxFunction(functionStmt, currentEnvironment);
         currentEnvironment.define(functionStmt.name().lexeme(), loxFunction);
     }
 
