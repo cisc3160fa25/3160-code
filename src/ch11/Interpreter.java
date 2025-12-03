@@ -1,12 +1,11 @@
-package ch10;
+package ch11;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 class Interpreter {
     final Environment globals = new Environment();
     private Environment currentEnvironment = globals;
+    private final Map<Expr, Integer> locals = new HashMap<>();
 
     Interpreter() {
         globals.define("clock", new LoxCallable() {
@@ -39,6 +38,10 @@ class Interpreter {
         }
     }
 
+    void resolve(Expr expr, int depth) {
+        locals.put(expr, depth);
+    }
+
     private void execute(Stmt stmt) {
         switch (stmt) {
             case Expression expressionStmt -> visitExpressionStmt(expressionStmt);
@@ -54,9 +57,6 @@ class Interpreter {
 
     private void visitFunctionStmt(Function functionStmt) {
         LoxFunction loxFunction = new LoxFunction(functionStmt, currentEnvironment);
-        // we capture the environment that is active when the function is *declared*
-        // (not the one active when the function is called)
-
         currentEnvironment.define(functionStmt.name().lexeme(), loxFunction);
     }
 
@@ -149,7 +149,7 @@ class Interpreter {
     private Object visitLogicalExpr(Logical logical) {
         Object left = evaluate(logical.left());
 
-        if (logical.operator().type() == ch10.TokenType.OR) {
+        if (logical.operator().type() == TokenType.OR) {
             if (isTruthy(left)) {
                 return left;
             }
@@ -256,13 +256,36 @@ class Interpreter {
     }
 
     private Object visitVariableExpr(Variable variable) {
-        return currentEnvironment.lookup(variable.name());
+        // previously: return currentEnvironment.lookup(variable.name());
+
+        // now instead:
+        return lookUpVariable(variable.name(), variable);
     }
 
     private Object visitAssignExpr(Assign assignExpr) {
         Object value = evaluate(assignExpr.value());
-        currentEnvironment.assign(assignExpr.name(), value);
+
+        // previously: currentEnvironment.assign(assignExpr.name(), value);
+
+        // now instead:
+        Integer distance = locals.get(assignExpr);
+        if (distance != null) {
+            currentEnvironment.assignAt(distance, assignExpr.name(), value);
+        } else {
+            globals.assign(assignExpr.name(), value);
+        }
+
         return value;
+    }
+
+    private Object lookUpVariable(Token name, Expr expr) {
+        Integer distance = locals.get(expr);
+
+        if (distance != null) {
+            return currentEnvironment.getAt(distance, name.lexeme());
+        } else {
+            return globals.lookup(name);
+        }
     }
 
     private boolean isTruthy(Object object) {
